@@ -43,7 +43,7 @@ class Solver(BaseSolver):
             self.P = ot.emd(self.a, self.b, M, numItermax=n_iter * 10)
         else:
             self.P = ot.sinkhorn(
-                self.a, self.b, M, self.reg, numItermax=n_iter * 10,
+                self.a, self.b, M, self.reg, numItermax=n_iter * 10 + 1,
                 stopThr=0, method="sinkhorn_stabilized",
             )
 

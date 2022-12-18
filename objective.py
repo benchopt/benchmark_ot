@@ -41,12 +41,16 @@ class Objective(BaseObjective):
         violation += 0.5 * ((P_b - self.b) ** 2).sum()
 
         obj = (P*self.M).sum()
+        P_supp = P[P > 0]
+        entropy = (P_supp*np.log(P_supp)).sum()
 
         # This method can return many metrics in a dictionary. One of these
         # metrics needs to be `value` for convergence detection purposes.
         return dict(
-            value=obj if violation < 1e-5 else (1+obj) * 100,
+            cost=obj,
             violation=violation,
+            entropy=entropy,
+            value=obj if violation < 1e-5 else violation,
         )
 
     def get_one_solution(self):

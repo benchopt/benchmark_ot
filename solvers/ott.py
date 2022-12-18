@@ -49,7 +49,7 @@ class Solver(BaseSolver):
             self.b,
             threshold=0,
             lse_mode=True,
-            max_iterations=n_iter + 1,
+            max_iterations=n_iter * 10 + 1,
         )
 
     def get_result(self):
