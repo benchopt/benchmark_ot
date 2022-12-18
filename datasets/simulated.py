@@ -18,10 +18,7 @@ class Dataset(BaseDataset):
     # the cross product for each key in the dictionary.
     # Any parameters 'param' defined here is available as `self.param`.
     parameters = {
-        'n_samples, n_features': [
-            (1000, 500),
-            (5000, 200),
-        ],
+        'n_samples': [1000, 10000],
         'random_state': [27],
     }
 
@@ -30,10 +27,20 @@ class Dataset(BaseDataset):
         # to `Objective.set_data`. This defines the benchmark's
         # API to pass data. It is customizable for each benchmark.
 
-        # Generate pseudorandom data using `numpy`.
         rng = np.random.RandomState(self.random_state)
-        X = rng.randn(self.n_samples, self.n_features)
-        y = rng.randn(self.n_samples)
+        n = self.n_samples
+
+        mu_x = np.array([0, 0])
+        cov_x = np.array([[1, 0], [0, 1]])
+
+        mu_y = np.array([4, 4])
+        cov_y = np.array([[1, -.8], [-.8, 1]])
+
+        x = rng.randn(n, 2) @ cov_x + mu_x
+        y = rng.randn(n + 1, 2) @ cov_y + mu_y
+
+        # uniform distribution on samples
+        a, b = np.ones(n) / n, np.ones(n + 1) / (n + 1)
 
         # The dictionary defines the keyword arguments for `Objective.set_data`
-        return dict(X=X, y=y)
+        return dict(x=x, a=a, y=y, b=b)
