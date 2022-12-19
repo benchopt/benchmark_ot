@@ -8,16 +8,14 @@ reproducible the comparisons of optimization algorithms.
 This benchmark is dedicated to solvers of discrete exact optimal transport:
 
 
-$$\\min_{x \\in \\mathbb{R}^{n_1 \\times n_2}} \\langle C, x \\rangle \\quad \\mathrm{subject to} \\quad a^\\top x = 1_{n_2}, \\, x b = 1_{n_1} $$
+$$\\min_{x \\in \\mathbb{R}^{n_1 \\times n_2}} \\langle C, x \\rangle \\quad \\mathrm{subject \, to} \\quad a^\\top x = 1_{n_2}, \\, x b = 1_{n_1} $$
 
 
 where
-$$C \\in \\mathbb{R}^{n_1 \\times n_2}, a \\in \\mathbb{R_+}^{n_1} \\ , \\b \\in \\mathbb{R_+}^{n_2}$$
+$$C \\in \\mathbb{R}^{n_1 \\times n_2}, a \\in \\mathbb{R}_+^{n_1} \\ , b \\in \\mathbb{R}_+^{n_2}$$
 
 
 Install
-
-
 -------
 
 This benchmark can be run using the following commands:
