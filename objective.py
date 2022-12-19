@@ -8,17 +8,13 @@ with safe_import_context() as import_ctx:
     from sklearn.metrics import pairwise_distances
 
 
-# The benchmark objective must be named `Objective` and
-# inherit from `BaseObjective` for `benchopt` to work properly.
 class Objective(BaseObjective):
 
-    # Name to select the objective in the CLI and to display the results.
     name = "Optimal Transport"
 
     # List of parameters for the objective. The benchmark will consider
     # the cross product for each key in the dictionary.
     # All parameters 'p' defined here are available as 'self.p'.
-    # This means the OLS objective will have a parameter `self.whiten_y`.
     parameters = {
     }
 
@@ -29,7 +25,7 @@ class Objective(BaseObjective):
     def set_data(self, x, a, y, b):
         # The keyword arguments of this function are the keys of the dictionary
         # returned by `Dataset.get_data`. This defines the benchmark's
-        # API to pass data. This is customizable for each benchmark.
+        # API to pass data.
         self.x, self.a = x, a
         self.y, self.b = y, b
         self.M = pairwise_distances(self.x, self.y)

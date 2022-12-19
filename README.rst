@@ -1,24 +1,24 @@
 
-My Benchopt Benchmark
-=====================
+Benchopt benchmark for exact Optimal Transport
+==============================================
 |Build Status| |Python 3.6+|
 
 Benchopt is a package to simplify and make more transparent and
 reproducible the comparisons of optimization algorithms.
-This benchmark is dedicated to solver of **describe your problem**:
+This benchmark is dedicated to solvers of discrete exact optimal transport:
 
 
-$$\\min_{w} f(X, w)$$
+$$\\min_{x \\in \\mathbb{R}^{n_1 \\times n_2}} \\langle C, x \\rangle \\quad \\mathrm{subject to} \\quad a^\\top x = 1_{n_2}, \\, x b = 1_{n_1} $$
 
 
-where $n$ (or ``n_samples``) stands for the number of samples, $p$ (or ``n_features``) stands for the number of features and
-
-
-$$X \\in \\mathbb{R}^{n \\times p} \\ , \\quad w \\in \\mathbb{R}^p$$
+where
+$$C \\in \\mathbb{R}^{n_1 \\times n_2}, a \\in \\mathbb{R_+}^{n_1} \\ , \\b \\in \\mathbb{R_+}^{n_2}$$
 
 
 Install
---------
+
+
+-------
 
 This benchmark can be run using the following commands:
 
