@@ -40,13 +40,18 @@ class Objective(BaseObjective):
         P_supp = P[P > 0]
         entropy = (P_supp*np.log(P_supp)).sum()
 
+        # benchopt tries to early stop solvers based on value.
+        # Set the objective value to be large as long as violation is higher
+        # than a threshold.
+        obj_violation = (1+violation) * np.diag(self.M).mean()
+
         # This method can return many metrics in a dictionary. One of these
         # metrics needs to be `value` for convergence detection purposes.
         return dict(
             cost=obj,
             violation=violation,
             entropy=entropy,
-            value=obj if violation < 1e-5 else violation,
+            value=obj if violation < 1e-9 else obj_violation,
         )
 
     def get_one_solution(self):

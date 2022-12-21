@@ -6,6 +6,7 @@ from benchopt import BaseSolver, safe_import_context
 with safe_import_context() as import_ctx:
     import numpy as np
 
+    import jax
     import jax.numpy as jnp
     from ott.geometry import pointcloud
     from ott.solvers.linear import sinkhorn
@@ -23,38 +24,46 @@ class Solver(BaseSolver):
 
     # List of parameters for the solver. The benchmark will consider
     # the cross product for each key in the dictionary.
-    # All parameters 'p' defined here are available as 'self.p'.
     parameters = {
         'reg': [1e-4, 1e-1],
     }
 
     def set_objective(self, x, a, y, b):
-        # Define the information received by each solver from the objective.
-        # The arguments of this function are the results of the
-        # `Objective.get_objective`. This defines the benchmark's API for
-        # passing the objective to the solver.
-        # It is customizable for each benchmark.
-        self.x, self.y, self.a, self.b = map(jnp.array, (x, y, a, b))
+        # Convert problem into jax array with int32 for jitted computations.
+        self.x, self.y, self.a, self.b = map(
+            lambda x: jnp.array(x, dtype=jnp.int32), (x, y, a, b)
+        )
 
-        # Call the solver once to make sure to precompile.
-        self.run(1)
+        # Define a jittable function to call the ott solver.
+        def _sinkhorn(x, y, a, b, eps, n_iter):
+            out = sinkhorn.sinkhorn(
+                pointcloud.PointCloud(x, y, epsilon=eps),
+                a, b, threshold=0, lse_mode=True,
+                max_iterations=10 * n_iter + 1,
+            )
+            # We need to select the attributes from out inside the jitted
+            # function, otherwise the function is considered as not pure.
+            return out.matrix
+
+        # Jit the function with static argument n_iter, as it is used to
+        # allocate some memory.
+        self.sinkhorn = jax.jit(_sinkhorn, static_argnames='n_iter')
+
+    def pre_run_hook(self, n_iter):
+        # Compile the function ahead of the call to not take it
+        # into account in the benchmark timing.
+        # We cannot do it only once as this compilation is call every time
+        # n_iter changes.
+        self._sinkhorn_compile = self.sinkhorn.lower(
+            self.x, self.y, self.a, self.b, self.reg, n_iter
+        ).compile()
 
     def run(self, n_iter):
-        # This is the function that is called to evaluate the solver.
-        # It runs the algorithm for a given a number of iterations `n_iter`.
-
-        self.out = sinkhorn.sinkhorn(
-            pointcloud.PointCloud(self.x, self.y, epsilon=self.reg),
-            self.a,
-            self.b,
-            threshold=0,
-            lse_mode=True,
-            max_iterations=n_iter * 10 + 1,
+        # Run the jitted function compiled ahead-of-time.
+        self.out = self._sinkhorn_compile(
+            self.x, self.y, self.a, self.b, self.reg
         )
 
     def get_result(self):
         # Return the result from one optimization run.
-        # The outputs of this function are the arguments of `Objective.compute`
-        # This defines the benchmark's API for solvers' results.
-        # it is customizable for each benchmark.
-        return np.array(self.out.matrix)
+        return np.array(self.out)
