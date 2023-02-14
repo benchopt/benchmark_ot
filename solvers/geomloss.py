@@ -96,9 +96,11 @@ class Solver(BaseSolver):
 
     def get_result(self):
         # Return the result from one optimization run.
+        f = self.f_ba + log_weights(self.a)
+        g = self.g_ab + log_weights(self.b)
         out = SinkhornOutput(
-            f=jnp.array(self.f_ba.detach().cpu().numpy()[0]),
-            g=jnp.array(self.g_ab.detach().cpu().numpy()[0]),
+            f=jnp.array(f.detach().cpu().numpy()[0]),
+            g=jnp.array(g.detach().cpu().numpy()[0]),
             ot_prob=self.ot_prob,
         )
         return np.array(out.matrix)
