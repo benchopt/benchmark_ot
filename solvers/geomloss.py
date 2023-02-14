@@ -39,6 +39,8 @@ class Solver(BaseSolver):
             ]
 
     def run(self, n_iter):
+        # content of `sinkhorn_tensorized` from
+        # https://github.com/jeanfeydy/geomloss/blob/main/geomloss/sinkhorn_samples.py
         x, y, a, b = self.x, self.y, self.a, self.b
         # Retrieve the batch size B, the numbers of samples N, M
         # and the size of the ambient space D:
@@ -80,8 +82,13 @@ class Solver(BaseSolver):
             None,
             debias=False,
         )
-        return f_ba.view_as(a), g_ab.view_as(b)
+        self.f_ba = f_ba.view_as(a)
+        self.g_ab = g_ab.view_as(b)
 
     def get_result(self):
         # Return the result from one optimization run.
+        out = SinkhornOutput(
+            f=jax.array(self.f_ba.detach().cpu().numpy()[0]),
+            g=jax.array(self.g_ab.detach().cpu().numpy()[0]),
+        )
         return np.array(self.out)
