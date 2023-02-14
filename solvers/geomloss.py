@@ -4,13 +4,12 @@ from benchopt import BaseSolver, safe_import_context
 # - skipping import to speed up autocompletion in CLI.
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
-    import numpy as np
-
     from geomloss.sinkhorn_divergence import log_weights, sinkhorn_loop
     from geomloss.sinkhorn_samples import cost_routines, softmin_tensorized
     import jax.numpy as jnp
     from ott.geometry import pointcloud
-    from ott.problems.linear import linear_problem, SinkhornOutput
+    from ott.problems.linear import linear_problem
+    from ott.solvers.linear.sinkhorn import SinkhornOutput
     import torch
 
 
