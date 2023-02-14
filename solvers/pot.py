@@ -44,7 +44,7 @@ class Solver(BaseSolver):
         else:
             self.P = ot.sinkhorn(
                 self.a, self.b, M, self.reg, numItermax=n_iter * 10 + 1,
-                stopThr=0, method="sinkhorn_stabilized",
+                stopThr=0, method="sinkhorn_log",
             )
 
     def get_result(self):
