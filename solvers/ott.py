@@ -8,6 +8,7 @@ with safe_import_context() as import_ctx:
 
     import jax
     import jax.numpy as jnp
+    import ott
     from ott.geometry import pointcloud
     from ott.solvers.linear import sinkhorn
     from ott.problems.linear import linear_problem
@@ -38,7 +39,10 @@ class Solver(BaseSolver):
         # Define a jittable function to call the ott solver.
         def _sinkhorn(x, y, a, b, eps, n_iter):
             prob = linear_problem.LinearProblem(
-                pointcloud.PointCloud(x, y, epsilon=eps), a, b
+                pointcloud.PointCloud(
+                    x, y, epsilon=eps,
+                    cost_fn=ott.geometry.costs.SqPNorm(p=2),
+                ), a, b
             )
             out = sinkhorn.Sinkhorn(
                 threshold=0, lse_mode=True, max_iterations=10 * n_iter + 1,

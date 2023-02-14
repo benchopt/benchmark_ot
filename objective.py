@@ -28,7 +28,7 @@ class Objective(BaseObjective):
         # API to pass data.
         self.x, self.a = x, a
         self.y, self.b = y, b
-        self.M = pairwise_distances(self.x, self.y)
+        self.M = pairwise_distances(self.x, self.y) / 2
 
     def compute(self, P):
 

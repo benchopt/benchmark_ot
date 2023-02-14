@@ -9,6 +9,7 @@ with safe_import_context() as import_ctx:
     from geomloss.sinkhorn_samples import cost_routines, softmin_tensorized
     import jax.numpy as jnp
     import numpy as np
+    import ott
     from ott.geometry import pointcloud
     from ott.problems.linear import linear_problem
     from ott.solvers.linear.sinkhorn import SinkhornOutput
@@ -39,7 +40,10 @@ class Solver(BaseSolver):
             lambda x: jnp.array(x), (x, y, a, b)
         )
         self.ot_prob = linear_problem.LinearProblem(
-            pointcloud.PointCloud(x_jax, y_jax, epsilon=self.reg,), a_jax, b_jax,
+            pointcloud.PointCloud(
+                x_jax, y_jax, epsilon=self.reg,
+                cost_fn=ott.geometry.costs.SqPNorm(p=2)
+            ), a_jax, b_jax,
         )
         self.x, self.a, self.y, self.b = [
             torch.from_numpy(t).float()[None] for t in (x, a, y, b)
@@ -59,11 +63,8 @@ class Solver(BaseSolver):
         B, N, D = x.shape
         _, M, _ = y.shape
         p = 2
-        # the squared norm is not divided by 2 in OTT so we
-        # multiply by 2
-        # in order to ease the construction of the output
-        # matrix
-        eps = 2*self.reg
+
+        eps = self.reg
         eps_list = [eps for _ in range(10*n_iter + 1)]
         cost = None
 
@@ -81,22 +82,17 @@ class Solver(BaseSolver):
         C_yx = cost(y, x.detach())  # (B,M,N) torch Tensor
         self.C = C_xy
 
-        # N.B.: The "auto-correlation" matrices C(x_i, x_j) and C(y_i, y_j)
-        #       are only used by the "debiased" Sinkhorn algorithm.
-        C_xx = None  # (B,N,N) torch Tensor
-        C_yy = None  # (B,M,M) torch Tensor
-
         # Use an optimal transport solver to retrieve the dual potentials:
         f_aa, g_bb, g_ab, f_ba = sinkhorn_loop(
             softmin_tensorized,
             log_weights(a),
             log_weights(b),
-            C_xx,
-            C_yy,
+            None,
+            None,
             C_xy,
             C_yx,
             eps_list,
-            None,
+            rho=None,
             debias=False,
         )
         self.f_ba = f_ba.view_as(a)
@@ -104,14 +100,6 @@ class Solver(BaseSolver):
 
     def get_result(self):
         # Return the result from one optimization run.
-        # JF's cost
-        # scal(a, f_ba, batch=batch) + scal(b, g_ab, batch=batch)
-        scal_a = torch.dot(self.a.reshape(-1), self.f_ba.reshape(-1))
-        scal_b = torch.dot(self.b.reshape(-1), self.g_ab.reshape(-1))
-        print(
-            "JF cost",
-            scal_a + scal_b,
-        )
         f = self.f_ba + self.reg*log_weights(self.a)
         g = self.g_ab + self.reg*log_weights(self.b)
         out = SinkhornOutput(
