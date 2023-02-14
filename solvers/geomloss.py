@@ -1,4 +1,5 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 # Protect the import with `safe_import_context()`. This allows:
 # - skipping import to speed up autocompletion in CLI.
@@ -30,14 +31,16 @@ class Solver(BaseSolver):
         'reg': [1e-2, 1e-1],
     }
 
+    stopping_criterion = SufficientProgressCriterion(patience=10)
+
     def set_objective(self, x, a, y, b):
         # Convert problem into jax array with int32 for jitted computations.
         x_jax, y_jax, a_jax, b_jax = map(
             lambda x: jnp.array(x), (x, y, a, b)
         )
         self.ot_prob = linear_problem.LinearProblem(
-                pointcloud.PointCloud(x_jax, y_jax), a_jax, b_jax
-            )
+            pointcloud.PointCloud(x_jax, y_jax, epsilon=self.reg,), a_jax, b_jax,
+        )
         self.x, self.a, self.y, self.b = [
             torch.from_numpy(t).float()[None] for t in (x, a, y, b)
         ]
