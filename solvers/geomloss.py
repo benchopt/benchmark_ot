@@ -27,7 +27,7 @@ class Solver(BaseSolver):
     # List of parameters for the solver. The benchmark will consider
     # the cross product for each key in the dictionary.
     parameters = {
-        'reg': [1e-4, 1e-1],
+        'reg': [1e-2, 1e-1],
     }
 
     def set_objective(self, x, a, y, b):
