@@ -38,7 +38,7 @@ class Objective(BaseObjective):
 
         obj = (P*self.M).sum()
         P_supp = P[P > 0]
-        entropy = (P_supp*np.log(P_supp)).sum()
+        neg_entropy = (P_supp*np.log(P_supp)).sum()
 
         # benchopt tries to early stop solvers based on value.
         # Set the objective value to be large as long as violation is higher
@@ -50,7 +50,7 @@ class Objective(BaseObjective):
         return dict(
             cost=obj,
             violation=violation,
-            entropy=entropy,
+            neg_entropy=neg_entropy,
             value=obj if violation < 1e-9 else obj_violation,
         )
 

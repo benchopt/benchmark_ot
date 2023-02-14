@@ -21,7 +21,7 @@ class Solver(BaseSolver):
     # the cross product for each key in the dictionary.
     # All parameters 'p' defined here are available as 'self.p'.
     parameters = {
-        'reg': [0, 1e-4, 1e-1],
+        'reg': [0, 1e-2, 1e-1],
     }
 
     def set_objective(self, x, a, y, b):
@@ -40,7 +40,7 @@ class Solver(BaseSolver):
         M = ot.dist(self.x, self.y)
 
         if self.reg == 0:
-            self.P = ot.emd(self.a, self.b, M, numItermax=n_iter * 10)
+            self.P = ot.emd(self.a, self.b, M, numItermax=n_iter)
         else:
             self.P = ot.sinkhorn(
                 self.a, self.b, M, self.reg, numItermax=n_iter * 10 + 1,
