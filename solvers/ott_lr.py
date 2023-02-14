@@ -9,7 +9,7 @@ with safe_import_context() as import_ctx:
     import jax
     import jax.numpy as jnp
     from ott.geometry import pointcloud
-    from ott.solvers.linear import sinkhorn
+    from ott.solvers.linear import sinkhorn_lr
     from ott.problems.linear import linear_problem
 
 
@@ -18,7 +18,7 @@ with safe_import_context() as import_ctx:
 class Solver(BaseSolver):
 
     # Name to select the solver in the CLI and to display the results.
-    name = 'OTT'
+    name = 'OTT-LR'
 
     install_cmd = 'conda'
     requirements = ['pip:git+https://github.com/ott-jax/ott']
@@ -26,7 +26,7 @@ class Solver(BaseSolver):
     # List of parameters for the solver. The benchmark will consider
     # the cross product for each key in the dictionary.
     parameters = {
-        'reg': [1e-2, 1e-1],
+        'rank': [10, 30],
     }
 
     def set_objective(self, x, a, y, b):
@@ -36,12 +36,13 @@ class Solver(BaseSolver):
         )
 
         # Define a jittable function to call the ott solver.
-        def _sinkhorn(x, y, a, b, eps, n_iter):
+        def _sinkhorn(x, y, a, b, rank, n_iter):
             prob = linear_problem.LinearProblem(
                 pointcloud.PointCloud(x, y), a, b
             )
-            out = sinkhorn.Sinkhorn(
-                threshold=0, lse_mode=True, max_iterations=10 * n_iter + 1,
+            out = sinkhorn_lr.LRSinkhorn(
+                threshold=0, lse_mode=True, rank=self.rank,
+                max_iterations=10 * n_iter + 1
             )(prob)
             # We need to select the attributes from out inside the jitted
             # function, otherwise the function is considered as not pure.
@@ -57,13 +58,13 @@ class Solver(BaseSolver):
         # We cannot do it only once as this compilation is call every time
         # n_iter changes.
         self._sinkhorn_compile = self.sinkhorn.lower(
-            self.x, self.y, self.a, self.b, self.reg, n_iter
+            self.x, self.y, self.a, self.b, self.rank, n_iter
         ).compile()
 
     def run(self, n_iter):
         # Run the jitted function compiled ahead-of-time.
         self.out = self._sinkhorn_compile(
-            self.x, self.y, self.a, self.b, self.reg
+            self.x, self.y, self.a, self.b, self.rank
         )
 
     def get_result(self):

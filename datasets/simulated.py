@@ -33,7 +33,7 @@ class Dataset(BaseDataset):
         mu_x = np.array([0, 0])
         cov_x = np.array([[1, 0], [0, 1]])
 
-        mu_y = np.array([10, 10])
+        mu_y = np.array([1, 1])
         cov_y = np.array([[1, .8], [.8, 1]])
 
         x = rng.randn(n, 2) @ cov_x + mu_x
