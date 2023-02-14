@@ -8,6 +8,9 @@ with safe_import_context() as import_ctx:
 
     from geomloss.sinkhorn_divergence import log_weights, sinkhorn_loop
     from geomloss.sinkhorn_samples import cost_routines, softmin_tensorized
+    import jax.numpy as jnp
+    from ott.geometry import pointcloud
+    from ott.problems.linear import linear_problem, SinkhornOutput
     import torch
 
 
@@ -29,6 +32,12 @@ class Solver(BaseSolver):
 
     def set_objective(self, x, a, y, b):
         # Convert problem into jax array with int32 for jitted computations.
+        x_jax, y_jax, a_jax, b_jax = map(
+            lambda x: jnp.array(x), (x, y, a, b)
+        )
+        self.ot_prob = linear_problem.LinearProblem(
+                pointcloud.PointCloud(x_jax, y_jax), a_jax, b_jax
+            )
         self.x, self.a, self.y, self.b = [
             torch.from_numpy(t).float()[None] for t in (x, a, y, b)
         ]
@@ -88,7 +97,8 @@ class Solver(BaseSolver):
     def get_result(self):
         # Return the result from one optimization run.
         out = SinkhornOutput(
-            f=jax.array(self.f_ba.detach().cpu().numpy()[0]),
-            g=jax.array(self.g_ab.detach().cpu().numpy()[0]),
+            f=jnp.array(self.f_ba.detach().cpu().numpy()[0]),
+            g=jnp.array(self.g_ab.detach().cpu().numpy()[0]),
+            ot_prob=self.ot_prob,
         )
-        return np.array(self.out)
+        return out.matrix
