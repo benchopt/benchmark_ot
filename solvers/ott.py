@@ -38,7 +38,7 @@ class Solver(BaseSolver):
         # Define a jittable function to call the ott solver.
         def _sinkhorn(x, y, a, b, eps, n_iter):
             prob = linear_problem.LinearProblem(
-                pointcloud.PointCloud(x, y), a, b
+                pointcloud.PointCloud(x, y, epsilon=eps), a, b
             )
             out = sinkhorn.Sinkhorn(
                 threshold=0, lse_mode=True, max_iterations=10 * n_iter + 1,
@@ -49,7 +49,7 @@ class Solver(BaseSolver):
 
         # Jit the function with static argument n_iter, as it is used to
         # allocate some memory.
-        self.sinkhorn = jax.jit(_sinkhorn, static_argnames='n_iter')
+        self.sinkhorn = jax.jit(_sinkhorn, static_argnames=('eps', 'n_iter'))
 
     def pre_run_hook(self, n_iter):
         # Compile the function ahead of the call to not take it
@@ -57,13 +57,13 @@ class Solver(BaseSolver):
         # We cannot do it only once as this compilation is call every time
         # n_iter changes.
         self._sinkhorn_compile = self.sinkhorn.lower(
-            self.x, self.y, self.a, self.b, self.reg, n_iter
+            self.x, self.y, self.a, self.b, float(self.reg), n_iter
         ).compile()
 
     def run(self, n_iter):
         # Run the jitted function compiled ahead-of-time.
         self.out = self._sinkhorn_compile(
-            self.x, self.y, self.a, self.b, self.reg
+            self.x, self.y, self.a, self.b,
         )
 
     def get_result(self):
