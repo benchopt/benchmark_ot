@@ -7,6 +7,7 @@ with safe_import_context() as import_ctx:
     from geomloss.sinkhorn_divergence import log_weights, sinkhorn_loop
     from geomloss.sinkhorn_samples import cost_routines, softmin_tensorized
     import jax.numpy as jnp
+    import numpy as np
     from ott.geometry import pointcloud
     from ott.problems.linear import linear_problem
     from ott.solvers.linear.sinkhorn import SinkhornOutput
@@ -18,7 +19,7 @@ with safe_import_context() as import_ctx:
 class Solver(BaseSolver):
 
     # Name to select the solver in the CLI and to display the results.
-    name = 'OTT'
+    name = 'GeomLoss'
 
     install_cmd = 'conda'
     requirements = ['torch', 'pykeops', 'pip:geomloss']
@@ -56,7 +57,7 @@ class Solver(BaseSolver):
         _, M, _ = y.shape
         p = 2
         eps = self.reg
-        eps_list = [eps for _ in range(10*n_iter)]
+        eps_list = [eps for _ in range(max(10*n_iter, 1))]
         cost = None
 
         # By default, our cost function :math:`C(x_i,y_j)` is a halved,
@@ -100,4 +101,4 @@ class Solver(BaseSolver):
             g=jnp.array(self.g_ab.detach().cpu().numpy()[0]),
             ot_prob=self.ot_prob,
         )
-        return out.matrix
+        return np.array(out.matrix)
