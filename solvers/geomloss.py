@@ -31,7 +31,7 @@ class Solver(BaseSolver):
         'reg': [1e-2, 1e-1],
     }
 
-    stopping_criterion = SufficientProgressCriterion(patience=10)
+    stopping_criterion = SufficientProgressCriterion(patience=50)
 
     def set_objective(self, x, a, y, b):
         # Convert problem into jax array with int32 for jitted computations.
@@ -59,8 +59,12 @@ class Solver(BaseSolver):
         B, N, D = x.shape
         _, M, _ = y.shape
         p = 2
-        eps = self.reg
-        eps_list = [eps for _ in range(max(10*n_iter, 1))]
+        # the squared norm is not divided by 2 in OTT so we
+        # multiply by 2
+        # in order to ease the construction of the output
+        # matrix
+        eps = 2*self.reg
+        eps_list = [eps for _ in range(10*n_iter + 1)]
         cost = None
 
         # By default, our cost function :math:`C(x_i,y_j)` is a halved,
@@ -75,6 +79,7 @@ class Solver(BaseSolver):
         # Please refer to the comments in this file for more details.
         C_xy = cost(x, y.detach())  # (B,N,M) torch Tensor
         C_yx = cost(y, x.detach())  # (B,M,N) torch Tensor
+        self.C = C_xy
 
         # N.B.: The "auto-correlation" matrices C(x_i, x_j) and C(y_i, y_j)
         #       are only used by the "debiased" Sinkhorn algorithm.
@@ -99,8 +104,16 @@ class Solver(BaseSolver):
 
     def get_result(self):
         # Return the result from one optimization run.
-        f = self.f_ba + log_weights(self.a)
-        g = self.g_ab + log_weights(self.b)
+        # JF's cost
+        # scal(a, f_ba, batch=batch) + scal(b, g_ab, batch=batch)
+        scal_a = torch.dot(self.a.reshape(-1), self.f_ba.reshape(-1))
+        scal_b = torch.dot(self.b.reshape(-1), self.g_ab.reshape(-1))
+        print(
+            "JF cost",
+            scal_a + scal_b,
+        )
+        f = self.f_ba + self.reg*log_weights(self.a)
+        g = self.g_ab + self.reg*log_weights(self.b)
         out = SinkhornOutput(
             f=jnp.array(f.detach().cpu().numpy()[0]),
             g=jnp.array(g.detach().cpu().numpy()[0]),
