@@ -53,7 +53,7 @@ class Solver(BaseSolver):
 
         # Jit the function with static argument n_iter, as it is used to
         # allocate some memory.
-        self.sinkhorn = jax.jit(_sinkhorn, static_argnames=("eps", "n_iter"))
+        self.sinkhorn = jax.jit(_sinkhorn, static_argnames=('eps', 'n_iter'))
 
     def pre_run_hook(self, n_iter):
         # Compile the function ahead of the call to not take it
@@ -67,7 +67,7 @@ class Solver(BaseSolver):
     def run(self, n_iter):
         # Run the jitted function compiled ahead-of-time.
         self.out = self._sinkhorn_compile(
-            self.x, self.y, self.a, self.b
+            self.x, self.y, self.a, self.b,
         )
 
     def get_result(self):
