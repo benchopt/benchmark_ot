@@ -69,14 +69,16 @@ class Solver(BaseSolver):
         cost = None
 
         # By default, our cost function :math:`C(x_i,y_j)` is a halved,
-        # squared Euclidean distance (p=2) or a simple Euclidean distance (p=1):
+        # squared Euclidean distance (p=2) or a simple Euclidean distance
+        # (p=1):
         if cost is None:
             cost = cost_routines[p]
 
         # Compute the relevant cost matrices C(x_i, y_j), C(y_j, x_i), etc.
         # Note that we "detach" the gradients of the "right-hand sides":
         # this is coherent with the way we compute our gradients
-        # in the `sinkhorn_loop(...)` routine, in the `sinkhorn_divergence.py` file.
+        # in the `sinkhorn_loop(...)` routine,
+        # in the `sinkhorn_divergence.py` file.
         # Please refer to the comments in this file for more details.
         C_xy = cost(x, y.detach())  # (B,N,M) torch Tensor
         C_yx = cost(y, x.detach())  # (B,M,N) torch Tensor
