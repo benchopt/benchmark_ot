@@ -41,6 +41,7 @@ class Solver(BaseSolver):
         # we skip the solver if use_gpu is True and no GPU is available
         if self.use_gpu and not torch.cuda.is_available():
             return True, "No GPU available"
+        return False, None
 
     def set_objective(self, x, a, y, b):
         # Create a ott problem based on jax to compute the output \
