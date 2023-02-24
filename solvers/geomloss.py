@@ -38,7 +38,8 @@ class Solver(BaseSolver):
     stopping_criterion = SufficientProgressCriterion(patience=50)
 
     def set_objective(self, x, a, y, b):
-        # Create a ott problem based on jax to compute the output of the solver.
+        # Create a ott problem based on jax to compute the output \
+        # of the solver.
         x_jax, y_jax, a_jax, b_jax = map(
             lambda x: jnp.array(x), (x, y, a, b)
         )
@@ -51,7 +52,10 @@ class Solver(BaseSolver):
 
         # Store the problem in torch to use GeomLoss.
         # Use the GPU when it is available.
-        device = 'cuda' if torch.cuda.is_available() and self.use_gpu else 'cpu'
+        device = (
+            'cuda' if torch.cuda.is_available() and self.use_gpu
+            else 'cpu'
+        )
         self.x, self.a, self.y, self.b = [
             torch.from_numpy(t).float().to(device=device)[None]
             for t in (x, a, y, b)
