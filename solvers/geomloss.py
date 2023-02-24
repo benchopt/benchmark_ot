@@ -32,10 +32,15 @@ class Solver(BaseSolver):
     # the cross product for each key in the dictionary.
     parameters = {
         'reg': [1e-2, 1e-1],
-        'use_gpu': [True],
+        'use_gpu': [True, False],
     }
 
     stopping_criterion = SufficientProgressCriterion(patience=50)
+
+    def skip(self, **kwargs):
+        # we skip the solver if use_gpu is True and no GPU is available
+        if self.use_gpu and not torch.cuda.is_available():
+            return True, "No GPU available"
 
     def set_objective(self, x, a, y, b):
         # Create a ott problem based on jax to compute the output \
@@ -52,10 +57,8 @@ class Solver(BaseSolver):
 
         # Store the problem in torch to use GeomLoss.
         # Use the GPU when it is available.
-        device = (
-            'cuda' if torch.cuda.is_available() and self.use_gpu
-            else 'cpu'
-        )
+        device = 'cuda' if self.use_gpu else 'cpu'
+
         self.x, self.a, self.y, self.b = [
             torch.from_numpy(t).float().to(device=device)[None]
             for t in (x, a, y, b)
