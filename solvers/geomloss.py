@@ -5,19 +5,21 @@ from benchopt.stopping_criterion import SufficientProgressCriterion
 # - skipping import to speed up autocompletion in CLI.
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
-    from geomloss.sinkhorn_divergence import log_weights, sinkhorn_loop
-    from geomloss.sinkhorn_samples import cost_routines, softmin_tensorized
     import jax.numpy as jnp
     import numpy as np
+
+    # Import Geomloss which is based on pytorch.
+    import torch
+    from geomloss.sinkhorn_divergence import log_weights, sinkhorn_loop
+    from geomloss.sinkhorn_samples import cost_routines, softmin_tensorized
+
+    # Using OTT to get an output compatible with the objective.
     import ott
     from ott.geometry import pointcloud
     from ott.problems.linear import linear_problem
     from ott.solvers.linear.sinkhorn import SinkhornOutput
-    import torch
 
 
-# The benchmark solvers must be named `Solver` and
-# inherit from `BaseSolver` for `benchopt` to work properly.
 class Solver(BaseSolver):
 
     # Name to select the solver in the CLI and to display the results.
@@ -30,12 +32,13 @@ class Solver(BaseSolver):
     # the cross product for each key in the dictionary.
     parameters = {
         'reg': [1e-2, 1e-1],
+        'use_gpu': [True],
     }
 
     stopping_criterion = SufficientProgressCriterion(patience=50)
 
     def set_objective(self, x, a, y, b):
-        # Convert problem into jax array with int32 for jitted computations.
+        # Create a ott problem based on jax to compute the output of the solver.
         x_jax, y_jax, a_jax, b_jax = map(
             lambda x: jnp.array(x), (x, y, a, b)
         )
@@ -45,14 +48,14 @@ class Solver(BaseSolver):
                 cost_fn=ott.geometry.costs.SqPNorm(p=2)
             ), a_jax, b_jax,
         )
+
+        # Store the problem in torch to use GeomLoss.
+        # Use the GPU when it is available.
+        device = 'cuda' if torch.cuda.is_available() and self.use_gpu else 'cpu'
         self.x, self.a, self.y, self.b = [
-            torch.from_numpy(t).float()[None] for t in (x, a, y, b)
+            torch.from_numpy(t).float().to(device=device)[None]
+            for t in (x, a, y, b)
         ]
-        # put all tensors on GPU if available
-        if torch.cuda.is_available():
-            self.x, self.a, self.y, self.b = [
-                t.cuda() for t in (self.x, self.a, self.y, self.b)
-            ]
 
     def run(self, n_iter):
         # content of `sinkhorn_tensorized` from
@@ -62,26 +65,16 @@ class Solver(BaseSolver):
         # and the size of the ambient space D:
         B, N, D = x.shape
         _, M, _ = y.shape
-        p = 2
 
+        # Geomloss use the eps schedule to specify the number of iterations.
+        # We use a fix schedule here.
         eps = self.reg
         eps_list = [eps for _ in range(10*n_iter + 1)]
-        cost = None
-
-        # By default, our cost function :math:`C(x_i,y_j)` is a halved,
-        # squared Euclidean distance (p=2) or a simple Euclidean distance
-        # (p=1):
-        if cost is None:
-            cost = cost_routines[p]
-
+        # Select the squared euclidean cost
+        cost = cost_routines[2]
         # Compute the relevant cost matrices C(x_i, y_j), C(y_j, x_i), etc.
-        # Note that we "detach" the gradients of the "right-hand sides":
-        # this is coherent with the way we compute our gradients
-        # in the `sinkhorn_loop(...)` routine,
-        # in the `sinkhorn_divergence.py` file.
-        # Please refer to the comments in this file for more details.
-        C_xy = cost(x, y.detach())  # (B,N,M) torch Tensor
-        C_yx = cost(y, x.detach())  # (B,M,N) torch Tensor
+        C_xy = cost(x, y)  # (B,N,M) torch Tensor
+        C_yx = C_xy.T
         self.C = C_xy
 
         # Use an optimal transport solver to retrieve the dual potentials:
