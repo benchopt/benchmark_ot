@@ -37,7 +37,7 @@ class Solver(BaseSolver):
         # This is the function that is called to evaluate the solver.
         # It runs the algorithm for a given a number of iterations `n_iter`.
 
-        M = ot.dist(self.x, self.y)
+        M = ot.dist(self.x, self.y) / 2
 
         if self.reg == 0:
             self.P = ot.emd(self.a, self.b, M, numItermax=n_iter)
