@@ -18,6 +18,9 @@ class Objective(BaseObjective):
     parameters = {
     }
 
+    install_cmd = "conda"
+    requirements = ["scikit-learn"]
+
     # Minimal version of benchopt required to run this benchmark.
     # Bump it up if the benchmark depends on a new feature of benchopt.
     min_benchopt_version = "1.5"
