@@ -20,7 +20,7 @@ class Objective(BaseObjective):
 
     # Minimal version of benchopt required to run this benchmark.
     # Bump it up if the benchmark depends on a new feature of benchopt.
-    min_benchopt_version = "1.3"
+    min_benchopt_version = "1.5"
 
     def set_data(self, x, a, y, b):
         # The keyword arguments of this function are the keys of the dictionary
@@ -30,7 +30,7 @@ class Objective(BaseObjective):
         self.y, self.b = y, b
         self.M = pairwise_distances(self.x, self.y) / 2
 
-    def compute(self, P):
+    def evaluate_result(self, P):
 
         P_a, P_b = P.sum(axis=1), P.sum(axis=0)
         violation = 0.5 * ((P_a - self.a) ** 2).sum()
@@ -54,10 +54,10 @@ class Objective(BaseObjective):
             value=obj if violation < 1e-9 else obj_violation,
         )
 
-    def get_one_solution(self):
+    def get_one_result(self):
         # Return one solution. The return value should be an object compatible
         # with `self.compute`. This is mainly for testing purposes.
-        return np.eye(self.a.shape[0], self.b.shape[0])
+        return dict(P=np.eye(self.a.shape[0], self.b.shape[0]))
 
     def get_objective(self):
         # Define the information to pass to each solver to run the benchmark.

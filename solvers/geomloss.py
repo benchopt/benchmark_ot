@@ -110,4 +110,4 @@ class Solver(BaseSolver):
             g=jnp.array(g.detach().cpu().numpy()[0]),
             ot_prob=self.ot_prob,
         )
-        return np.array(out.matrix)
+        return dict(P=np.array(out.matrix))
