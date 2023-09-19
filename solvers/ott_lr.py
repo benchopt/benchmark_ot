@@ -73,4 +73,4 @@ class Solver(BaseSolver):
 
     def get_result(self):
         # Return the result from one optimization run.
-        return np.array(self.out.matrix)
+        return dict(P=np.array(self.out.matrix))
