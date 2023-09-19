@@ -26,7 +26,9 @@ class Solver(BaseSolver):
     name = 'GeomLoss'
 
     install_cmd = 'conda'
-    requirements = ['pytorch:pytorch', 'pip:pykeops', 'pip:geomloss', 'ott-jax']
+    requirements = [
+        'pytorch:pytorch', 'pip:pykeops', 'pip:geomloss', 'ott-jax'
+    ]
 
     # List of parameters for the solver. The benchmark will consider
     # the cross product for each key in the dictionary.
