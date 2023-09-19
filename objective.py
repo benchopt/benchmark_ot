@@ -21,6 +21,10 @@ class Objective(BaseObjective):
     install_cmd = "conda"
     requirements = ["scikit-learn"]
 
+    # As we evaluate various formulations that do not always return
+    # feasible points, skip the optimility check.
+    is_convex = False
+
     # Minimal version of benchopt required to run this benchmark.
     # Bump it up if the benchmark depends on a new feature of benchopt.
     min_benchopt_version = "1.5"

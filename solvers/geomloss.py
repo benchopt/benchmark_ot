@@ -34,7 +34,7 @@ class Solver(BaseSolver):
     # the cross product for each key in the dictionary.
     parameters = {
         'reg': [1e-2, 1e-1],
-        'use_gpu': [True, False],
+        'use_gpu': [False, True],
     }
 
     stopping_criterion = SufficientProgressCriterion(patience=50)
@@ -84,7 +84,7 @@ class Solver(BaseSolver):
         cost = cost_routines[2]
         # Compute the relevant cost matrices C(x_i, y_j), C(y_j, x_i), etc.
         C_xy = cost(x, y)  # (B,N,M) torch Tensor
-        C_yx = C_xy.T
+        C_yx = C_xy.transpose(1, 2)  # (B,M,N) torch Tensor
         self.C = C_xy
 
         # Use an optimal transport solver to retrieve the dual potentials:
